@@ -1,0 +1,19 @@
+# Compilación de Java (Requisito A.4)
+*.class
+bin/
+out/
+
+# Archivo de configuración con la clave real de la base de datos (Requisito A.4)
+config.properties
+
+# Archivos del sistema y del entorno
+.DS_Store
+Thumbs.db
+
+# Configuraciones de IDEs
+.idea/
+.vscode/
+*.iml
+.project
+.classpath
+.settings/
