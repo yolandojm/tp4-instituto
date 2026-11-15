@@ -4,4 +4,4 @@
 
 db.url=jdbc:mysql://localhost:3306/instituto
 db.user=root
-db.password=tu_clave_aqui
+db.password=
