@@ -18,7 +18,7 @@ public class InscripcionDAO {
         String sql = """
                 SELECT a.nombre, a.apellido, a.dni, a.correo,
                        c.codigo, c.idioma, c.nivel, c.turno,
-                       c.cupo, c.cuota_mensual,
+                       c.cupo, c.vacantes, c.cuota_mensual,
                        i.fecha, i.cuota_paga
                 FROM inscripcion i
                 JOIN alumno a ON i.id_alumno = a.id_alumno
@@ -37,13 +37,39 @@ public class InscripcionDAO {
         return inscripciones;
     }
 
+    public List<Inscripcion> listarDeudores() throws SQLException, IOException {
+        List<Inscripcion> deudores = new ArrayList<>();
+
+        String sql = """
+                SELECT a.nombre, a.apellido, a.dni, a.correo,
+                       c.codigo, c.idioma, c.nivel, c.turno,
+                       c.cupo, c.vacantes, c.cuota_mensual,
+                       i.fecha, i.cuota_paga
+                FROM inscripcion i
+                JOIN alumno a ON i.id_alumno = a.id_alumno
+                JOIN curso c ON i.id_curso = c.id_curso
+                WHERE i.cuota_paga = FALSE
+                """;
+
+        try (Connection con = Conexion.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+
+            while (rs.next()) {
+                deudores.add(mapearInscripcion(rs));
+            }
+        }
+
+        return deudores;
+    }
+
     public Inscripcion buscarPorDniYCodigo(String dni, String codigo)
             throws SQLException, IOException {
 
         String sql = """
                 SELECT a.nombre, a.apellido, a.dni, a.correo,
                        c.codigo, c.idioma, c.nivel, c.turno,
-                       c.cupo, c.cuota_mensual,
+                       c.cupo, c.vacantes, c.cuota_mensual,
                        i.fecha, i.cuota_paga
                 FROM inscripcion i
                 JOIN alumno a ON i.id_alumno = a.id_alumno
@@ -70,75 +96,36 @@ public class InscripcionDAO {
     public boolean insertar(Inscripcion inscripcion)
             throws SQLException, IOException {
 
-        String sqlAlumno = "SELECT id_alumno FROM alumno WHERE dni = ?";
-        String sqlCurso = "SELECT id_curso, vacantes FROM curso WHERE codigo = ? FOR UPDATE";
-        String sqlExiste = """
-                SELECT id_inscripcion FROM inscripcion
-                WHERE id_alumno = ? AND id_curso = ?
-                """;
         String sqlInsertar = """
                 INSERT INTO inscripcion (id_alumno, id_curso, fecha, cuota_paga)
-                VALUES (?, ?, ?, ?)
+                SELECT a.id_alumno, c.id_curso, ?, ?
+                FROM alumno a
+                JOIN curso c ON c.codigo = ?
+                WHERE a.dni = ?
                 """;
-        String sqlVacantes = "UPDATE curso SET vacantes = vacantes - 1 WHERE id_curso = ?";
+        String sqlVacantes = "UPDATE curso SET vacantes = vacantes - 1 WHERE codigo = ?";
 
         try (Connection con = Conexion.getConnection()) {
             con.setAutoCommit(false);
 
-            try {
-                int idAlumno;
-                int idCurso;
-                int vacantes;
+            try (PreparedStatement psInsertar = con.prepareStatement(sqlInsertar);
+                 PreparedStatement psVacantes = con.prepareStatement(sqlVacantes)) {
 
-                try (PreparedStatement ps = con.prepareStatement(sqlAlumno)) {
-                    ps.setString(1, inscripcion.getAlumno().getDni());
+                psInsertar.setDate(1, Date.valueOf(inscripcion.getFecha()));
+                psInsertar.setBoolean(2, inscripcion.getCuotaPaga());
+                psInsertar.setString(3, inscripcion.getCurso().getCodigo());
+                psInsertar.setString(4, inscripcion.getAlumno().getDni());
 
-                    try (ResultSet rs = ps.executeQuery()) {
-                        if (!rs.next()) {
-                            throw new SQLException("El alumno no existe.");
-                        }
-                        idAlumno = rs.getInt("id_alumno");
-                    }
+                if (psInsertar.executeUpdate() != 1) {
+                    con.rollback();
+                    return false;
                 }
 
-                try (PreparedStatement ps = con.prepareStatement(sqlCurso)) {
-                    ps.setString(1, inscripcion.getCurso().getCodigo());
+                psVacantes.setString(1, inscripcion.getCurso().getCodigo());
 
-                    try (ResultSet rs = ps.executeQuery()) {
-                        if (!rs.next()) {
-                            throw new SQLException("El curso no existe.");
-                        }
-                        idCurso = rs.getInt("id_curso");
-                        vacantes = rs.getInt("vacantes");
-                    }
-                }
-
-                if (vacantes <= 0) {
-                    throw new SQLException("El curso no tiene vacantes.");
-                }
-
-                try (PreparedStatement ps = con.prepareStatement(sqlExiste)) {
-                    ps.setInt(1, idAlumno);
-                    ps.setInt(2, idCurso);
-
-                    try (ResultSet rs = ps.executeQuery()) {
-                        if (rs.next()) {
-                            throw new SQLException("El alumno ya está inscripto en este curso.");
-                        }
-                    }
-                }
-
-                try (PreparedStatement ps = con.prepareStatement(sqlInsertar)) {
-                    ps.setInt(1, idAlumno);
-                    ps.setInt(2, idCurso);
-                    ps.setDate(3, Date.valueOf(inscripcion.getFecha()));
-                    ps.setBoolean(4, inscripcion.getCuotaPaga());
-                    ps.executeUpdate();
-                }
-
-                try (PreparedStatement ps = con.prepareStatement(sqlVacantes)) {
-                    ps.setInt(1, idCurso);
-                    ps.executeUpdate();
+                if (psVacantes.executeUpdate() != 1) {
+                    con.rollback();
+                    return false;
                 }
 
                 con.commit();
@@ -177,48 +164,33 @@ public class InscripcionDAO {
     public boolean eliminar(String dni, String codigo)
             throws SQLException, IOException {
 
-        String sqlBuscar = """
-                SELECT i.id_inscripcion, i.id_curso
-                FROM inscripcion i
+        String sqlEliminar = """
+                DELETE i FROM inscripcion i
                 JOIN alumno a ON i.id_alumno = a.id_alumno
                 JOIN curso c ON i.id_curso = c.id_curso
                 WHERE a.dni = ? AND c.codigo = ?
-                FOR UPDATE
                 """;
-
-        String sqlEliminar = "DELETE FROM inscripcion WHERE id_inscripcion = ?";
-        String sqlVacantes = "UPDATE curso SET vacantes = vacantes + 1 WHERE id_curso = ?";
+        String sqlVacantes = "UPDATE curso SET vacantes = vacantes + 1 WHERE codigo = ?";
 
         try (Connection con = Conexion.getConnection()) {
             con.setAutoCommit(false);
 
-            try {
-                int idInscripcion;
-                int idCurso;
+            try (PreparedStatement psEliminar = con.prepareStatement(sqlEliminar);
+                 PreparedStatement psVacantes = con.prepareStatement(sqlVacantes)) {
 
-                try (PreparedStatement ps = con.prepareStatement(sqlBuscar)) {
-                    ps.setString(1, dni);
-                    ps.setString(2, codigo);
+                psEliminar.setString(1, dni);
+                psEliminar.setString(2, codigo);
 
-                    try (ResultSet rs = ps.executeQuery()) {
-                        if (!rs.next()) {
-                            con.rollback();
-                            return false;
-                        }
-
-                        idInscripcion = rs.getInt("id_inscripcion");
-                        idCurso = rs.getInt("id_curso");
-                    }
+                if (psEliminar.executeUpdate() != 1) {
+                    con.rollback();
+                    return false;
                 }
 
-                try (PreparedStatement ps = con.prepareStatement(sqlEliminar)) {
-                    ps.setInt(1, idInscripcion);
-                    ps.executeUpdate();
-                }
+                psVacantes.setString(1, codigo);
 
-                try (PreparedStatement ps = con.prepareStatement(sqlVacantes)) {
-                    ps.setInt(1, idCurso);
-                    ps.executeUpdate();
+                if (psVacantes.executeUpdate() != 1) {
+                    con.rollback();
+                    return false;
                 }
 
                 con.commit();
@@ -246,6 +218,7 @@ public class InscripcionDAO {
                 rs.getString("nivel"),
                 rs.getString("turno"),
                 rs.getInt("cupo"),
+                rs.getInt("vacantes"),
                 rs.getDouble("cuota_mensual")
         );
 

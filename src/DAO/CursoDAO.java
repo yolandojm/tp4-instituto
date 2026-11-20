@@ -14,7 +14,7 @@ public class CursoDAO {
 
         List<Curso> cursos = new ArrayList<>();
 
-        String sql = "SELECT codigo, idioma, nivel, turno, cupo, cuota_mensual FROM curso";
+        String sql = "SELECT codigo, idioma, nivel, turno, cupo, vacantes, cuota_mensual FROM curso";
 
         try (Connection con = Conexion.getConnection();
              PreparedStatement ps = con.prepareStatement(sql);
@@ -28,6 +28,7 @@ public class CursoDAO {
                         rs.getString("nivel"),
                         rs.getString("turno"),
                         rs.getInt("cupo"),
+                        rs.getInt("vacantes"),
                         rs.getDouble("cuota_mensual")
                 );
 
@@ -40,7 +41,7 @@ public class CursoDAO {
 
     public Curso buscarPorCodigo(String codigo) throws SQLException, IOException {
 
-        String sql = "SELECT codigo, idioma, nivel, turno, cupo, cuota_mensual FROM curso WHERE codigo = ?";
+        String sql = "SELECT codigo, idioma, nivel, turno, cupo, vacantes, cuota_mensual FROM curso WHERE codigo = ?";
 
         try (Connection con = Conexion.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
@@ -56,6 +57,7 @@ public class CursoDAO {
                             rs.getString("nivel"),
                             rs.getString("turno"),
                             rs.getInt("cupo"),
+                            rs.getInt("vacantes"),
                             rs.getDouble("cuota_mensual")
                     );
                 }
@@ -77,7 +79,7 @@ public class CursoDAO {
             ps.setString(3, curso.getNivel());
             ps.setString(4, curso.getTurno());
             ps.setInt(5, curso.getCupo());
-            ps.setInt(6, curso.getCupo());
+            ps.setInt(6, curso.getVacantes());
             ps.setDouble(7, curso.getCuotaMensual());
 
             return ps.executeUpdate() == 1;
