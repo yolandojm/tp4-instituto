@@ -1,18 +1,19 @@
+package dao;
 
-package DAO;
-
-import Conexion.Conexion;
+import conexion.Conexion;
 import modelo.Alumno;
 
 import java.io.IOException;
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
 public class AlumnoDAO {
 
     public List<Alumno> listar() throws SQLException, IOException {
-
         List<Alumno> alumnos = new ArrayList<>();
         String sql = "SELECT nombre, apellido, dni, correo FROM alumno";
 
@@ -27,7 +28,6 @@ public class AlumnoDAO {
                         rs.getString("dni"),
                         rs.getString("correo")
                 );
-
                 alumnos.add(alumno);
             }
         }
@@ -36,7 +36,6 @@ public class AlumnoDAO {
     }
 
     public Alumno buscarPorDni(String dni) throws SQLException, IOException {
-
         String sql = "SELECT nombre, apellido, dni, correo FROM alumno WHERE dni = ?";
 
         try (Connection con = Conexion.getConnection();
@@ -45,7 +44,6 @@ public class AlumnoDAO {
             ps.setString(1, dni);
 
             try (ResultSet rs = ps.executeQuery()) {
-
                 if (rs.next()) {
                     return new Alumno(
                             rs.getString("nombre"),
@@ -61,7 +59,6 @@ public class AlumnoDAO {
     }
 
     public boolean insertar(Alumno alumno) throws SQLException, IOException {
-
         String sql = "INSERT INTO alumno (nombre, apellido, dni, correo) VALUES (?, ?, ?, ?)";
 
         try (Connection con = Conexion.getConnection();
@@ -77,7 +74,6 @@ public class AlumnoDAO {
     }
 
     public boolean modificar(String dniActual, Alumno alumno) throws SQLException, IOException {
-
         String sql = "UPDATE alumno SET nombre = ?, apellido = ?, dni = ?, correo = ? WHERE dni = ?";
 
         try (Connection con = Conexion.getConnection();
@@ -94,7 +90,6 @@ public class AlumnoDAO {
     }
 
     public boolean eliminar(String dni) throws SQLException, IOException {
-
         String sql = "DELETE FROM alumno WHERE dni = ?";
 
         try (Connection con = Conexion.getConnection();

@@ -1,8 +1,8 @@
 package vista;
 
-import DAO.AlumnoDAO;
-import DAO.CursoDAO;
-import DAO.InscripcionDAO;
+import dao.AlumnoDAO;
+import dao.CursoDAO;
+import dao.InscripcionDAO;
 import modelo.Alumno;
 import modelo.Curso;
 import modelo.Inscripcion;

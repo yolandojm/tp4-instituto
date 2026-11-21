@@ -1,12 +1,16 @@
+package dao;
 
-package DAO;
-
-import Conexion.Conexion;
-import modelo.Inscripcion;
+import conexion.Conexion;
 import modelo.Alumno;
 import modelo.Curso;
+import modelo.Inscripcion;
+
 import java.io.IOException;
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.Date;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -63,9 +67,7 @@ public class InscripcionDAO {
         return deudores;
     }
 
-    public Inscripcion buscarPorDniYCodigo(String dni, String codigo)
-            throws SQLException, IOException {
-
+    public Inscripcion buscarPorDniYCodigo(String dni, String codigo) throws SQLException, IOException {
         String sql = """
                 SELECT a.nombre, a.apellido, a.dni, a.correo,
                        c.codigo, c.idioma, c.nivel, c.turno,
@@ -93,9 +95,7 @@ public class InscripcionDAO {
         return null;
     }
 
-    public boolean insertar(Inscripcion inscripcion)
-            throws SQLException, IOException {
-
+    public boolean insertar(Inscripcion inscripcion) throws SQLException, IOException {
         String sqlInsertar = """
                 INSERT INTO inscripcion (id_alumno, id_curso, fecha, cuota_paga)
                 SELECT a.id_alumno, c.id_curso, ?, ?
@@ -138,9 +138,7 @@ public class InscripcionDAO {
         }
     }
 
-    public boolean modificar(String dni, String codigo, Inscripcion inscripcion)
-            throws SQLException, IOException {
-
+    public boolean modificar(String dni, String codigo, Inscripcion inscripcion) throws SQLException, IOException {
         String sql = """
                 UPDATE inscripcion i
                 JOIN alumno a ON i.id_alumno = a.id_alumno
@@ -161,9 +159,7 @@ public class InscripcionDAO {
         }
     }
 
-    public boolean eliminar(String dni, String codigo)
-            throws SQLException, IOException {
-
+    public boolean eliminar(String dni, String codigo) throws SQLException, IOException {
         String sqlEliminar = """
                 DELETE i FROM inscripcion i
                 JOIN alumno a ON i.id_alumno = a.id_alumno
@@ -204,7 +200,6 @@ public class InscripcionDAO {
     }
 
     private Inscripcion mapearInscripcion(ResultSet rs) throws SQLException {
-
         Alumno alumno = new Alumno(
                 rs.getString("nombre"),
                 rs.getString("apellido"),
