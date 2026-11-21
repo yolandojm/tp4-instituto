@@ -96,6 +96,8 @@ public class VentanaInstituto extends JFrame {
         add(panelCentro, BorderLayout.CENTER);
 
         add(crearPanelInscripciones(), BorderLayout.SOUTH);
+
+        cargar();
     }
 
     private JPanel crearPanelAltaAlumno() {
@@ -174,6 +176,7 @@ public class VentanaInstituto extends JFrame {
             campoApellido.setText("");
             campoDni.setText("");
             campoCorreo.setText("");
+            cargar();
             JOptionPane.showMessageDialog(this, "Alumno guardado");
         } catch (SQLException | IOException ex) {
             JOptionPane.showMessageDialog(this, "No se pudo guardar el alumno");
@@ -199,6 +202,7 @@ public class VentanaInstituto extends JFrame {
         try {
             inscripcionDAO.insertar(nueva);
             checkCuotaPaga.setSelected(false);
+            cargar();
             JOptionPane.showMessageDialog(this, "Inscripción guardada");
         } catch (SQLException | IOException ex) {
             JOptionPane.showMessageDialog(this, "No se pudo guardar la inscripción");
@@ -225,10 +229,51 @@ public class VentanaInstituto extends JFrame {
         if (r == JOptionPane.YES_OPTION) {
             try {
                 inscripcionDAO.eliminar(dni, codigoCurso);
+                cargar();
                 JOptionPane.showMessageDialog(this, "Inscripción dada de baja");
             } catch (SQLException | IOException ex) {
                 JOptionPane.showMessageDialog(this, "No se pudo dar de baja la inscripción");
             }
+        }
+    }
+
+    private void cargar() {
+        modeloCursos.setRowCount(0);
+        modeloInscripciones.setRowCount(0);
+        comboAlumnos.removeAllItems();
+        comboCursos.removeAllItems();
+
+        try {
+            for (Curso c : cursoDAO.listar()) {
+                modeloCursos.addRow(new Object[]{
+                        c.getCodigo(),
+                        c.getIdioma(),
+                        c.getNivel(),
+                        c.getTurno(),
+                        c.getCupo(),
+                        c.getInscriptos(),
+                        c.getVacantes(),
+                        c.getCuotaMensual()
+                });
+                comboCursos.addItem(c);
+            }
+
+            for (Alumno a : alumnoDAO.listar()) {
+                comboAlumnos.addItem(a);
+            }
+
+            for (Inscripcion i : inscripcionDAO.listar()) {
+                modeloInscripciones.addRow(new Object[]{
+                        i.getAlumno().getDni(),
+                        i.getAlumno().getApellido() + ", " + i.getAlumno().getNombre(),
+                        i.getCurso().getCodigo(),
+                        i.getCurso().getIdioma() + " " + i.getCurso().getNivel(),
+                        i.getFecha().toString(),
+                        i.getCuotaPaga() ? "Sí" : "No"
+                });
+            }
+        } catch (SQLException | IOException ex) {
+            JOptionPane.showMessageDialog(this, "No se pudo leer la base");
         }
     }
 
