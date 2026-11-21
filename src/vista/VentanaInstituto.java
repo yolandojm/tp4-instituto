@@ -2,41 +2,47 @@ package vista;
 
 import DAO.AlumnoDAO;
 import DAO.CursoDAO;
+import DAO.InscripcionDAO;
 import modelo.Alumno;
 import modelo.Curso;
+import modelo.Inscripcion;
 
 import javax.swing.*;
-import javax.swing.border.EmptyBorder;
-import javax.swing.border.TitledBorder;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.io.IOException;
 import java.sql.SQLException;
+import java.time.LocalDate;
 
 public class VentanaInstituto extends JFrame {
 
     private final CursoDAO cursoDAO = new CursoDAO();
     private final AlumnoDAO alumnoDAO = new AlumnoDAO();
+    private final InscripcionDAO inscripcionDAO = new InscripcionDAO();
 
     private final DefaultTableModel modeloCursos;
     private final JTable tablaCursos;
 
-    private final JTextField campoNombre = new JTextField(15);
-    private final JTextField campoApellido = new JTextField(15);
-    private final JTextField campoDni = new JTextField(12);
-    private final JTextField campoCorreo = new JTextField(18);
+    private final DefaultTableModel modeloInscripciones;
+    private final JTable tablaInscripciones;
+
+    private final JTextField campoNombre = new JTextField(10);
+    private final JTextField campoApellido = new JTextField(10);
+    private final JTextField campoDni = new JTextField(8);
+    private final JTextField campoCorreo = new JTextField(12);
+
+    private final JComboBox<Alumno> comboAlumnos = new JComboBox<>();
+    private final JComboBox<Curso> comboCursos = new JComboBox<>();
+    private final JCheckBox checkCuotaPaga = new JCheckBox("Cuota paga");
 
     public VentanaInstituto() {
-        super("Instituto de Idiomas — Gestión de Inscripciones");
-        setSize(900, 600);
+        super("Instituto de Idiomas");
+        setSize(950, 650);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
         setLayout(new BorderLayout(10, 10));
 
-        JLabel titulo = new JLabel("Cursos del Instituto", SwingConstants.CENTER);
-        titulo.setFont(new Font("SansSerif", Font.BOLD, 16));
-        titulo.setBorder(new EmptyBorder(8, 8, 0, 8));
-        add(titulo, BorderLayout.NORTH);
+        add(crearPanelAltaAlumno(), BorderLayout.NORTH);
 
         String[] columnasCursos = {
                 "Código", "Idioma", "Nivel", "Turno",
@@ -62,39 +68,80 @@ public class VentanaInstituto extends JFrame {
         tablaCursos = new JTable(modeloCursos);
         tablaCursos.setAutoCreateRowSorter(true);
 
-        JScrollPane scrollCursos = new JScrollPane(tablaCursos);
-        scrollCursos.setBorder(new TitledBorder("Listado de Cursos (Ordenable por columna)"));
-        add(scrollCursos, BorderLayout.CENTER);
+        JPanel panelTablaCursos = new JPanel(new BorderLayout());
+        panelTablaCursos.add(new JLabel("Cursos del Instituto", SwingConstants.CENTER), BorderLayout.NORTH);
+        panelTablaCursos.add(new JScrollPane(tablaCursos), BorderLayout.CENTER);
 
-        add(crearPanelAltaAlumno(), BorderLayout.SOUTH);
+        String[] columnasInscripciones = {
+                "DNI Alumno", "Alumno", "Código Curso", "Curso", "Fecha", "Cuota Paga"
+        };
 
-        cargarCursos();
+        modeloInscripciones = new DefaultTableModel(columnasInscripciones, 0) {
+            @Override
+            public boolean isCellEditable(int fila, int columna) {
+                return false;
+            }
+        };
+
+        tablaInscripciones = new JTable(modeloInscripciones);
+        tablaInscripciones.setAutoCreateRowSorter(true);
+
+        JPanel panelTablaInscripciones = new JPanel(new BorderLayout());
+        panelTablaInscripciones.add(new JLabel("Inscripciones Registradas", SwingConstants.CENTER), BorderLayout.NORTH);
+        panelTablaInscripciones.add(new JScrollPane(tablaInscripciones), BorderLayout.CENTER);
+
+        JPanel panelCentro = new JPanel(new GridLayout(2, 1, 10, 10));
+        panelCentro.add(panelTablaCursos);
+        panelCentro.add(panelTablaInscripciones);
+        add(panelCentro, BorderLayout.CENTER);
+
+        add(crearPanelInscripciones(), BorderLayout.SOUTH);
     }
 
     private JPanel crearPanelAltaAlumno() {
-        JPanel contenedor = new JPanel(new BorderLayout(8, 8));
-        contenedor.setBorder(new TitledBorder("Alta de Alumno"));
+        JPanel panel = new JPanel(new BorderLayout(5, 5));
+        panel.add(new JLabel("Alta de Alumno", SwingConstants.CENTER), BorderLayout.NORTH);
 
-        JPanel formulario = new JPanel(new GridLayout(2, 4, 8, 8));
-        formulario.setBorder(new EmptyBorder(6, 10, 6, 10));
-
+        JPanel formulario = new JPanel();
         formulario.add(new JLabel("Nombre:"));
         formulario.add(campoNombre);
         formulario.add(new JLabel("Apellido:"));
         formulario.add(campoApellido);
         formulario.add(new JLabel("DNI:"));
         formulario.add(campoDni);
-        formulario.add(new JLabel("Correo (opcional):"));
+        formulario.add(new JLabel("Correo:"));
         formulario.add(campoCorreo);
 
-        JPanel botones = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        JButton botonGuardarAlumno = new JButton("Guardar Alumno");
-        botonGuardarAlumno.addActionListener(e -> guardarAlumno());
-        botones.add(botonGuardarAlumno);
+        JButton botonGuardar = new JButton("Guardar Alumno");
+        botonGuardar.addActionListener(e -> guardarAlumno());
+        formulario.add(botonGuardar);
 
-        contenedor.add(formulario, BorderLayout.CENTER);
-        contenedor.add(botones, BorderLayout.SOUTH);
-        return contenedor;
+        panel.add(formulario, BorderLayout.CENTER);
+        return panel;
+    }
+
+    private JPanel crearPanelInscripciones() {
+        JPanel panel = new JPanel(new GridLayout(2, 1, 5, 5));
+
+        JPanel filaInscribir = new JPanel();
+        filaInscribir.add(new JLabel("Alumno:"));
+        filaInscribir.add(comboAlumnos);
+        filaInscribir.add(new JLabel("Curso:"));
+        filaInscribir.add(comboCursos);
+        filaInscribir.add(checkCuotaPaga);
+
+        JButton botonInscribir = new JButton("Inscribir");
+        botonInscribir.addActionListener(e -> inscribirAlumno());
+        filaInscribir.add(botonInscribir);
+
+        JPanel filaBaja = new JPanel();
+        JButton botonBaja = new JButton("Dar de Baja Inscripción Elegida");
+        botonBaja.addActionListener(e -> darDeBajaInscripcion());
+        filaBaja.add(botonBaja);
+
+        panel.add(filaInscribir);
+        panel.add(filaBaja);
+        return panel;
     }
 
     private void guardarAlumno() {
@@ -104,112 +151,88 @@ public class VentanaInstituto extends JFrame {
         String correoTexto = campoCorreo.getText().trim();
 
         if (nombre.isEmpty() || apellido.isEmpty() || dni.isEmpty()) {
-            JOptionPane.showMessageDialog(
-                    this,
-                    "Nombre, apellido y DNI son obligatorios.",
-                    "Datos incompletos",
-                    JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Nombre, apellido y DNI son obligatorios");
             return;
         }
 
-        if (!dni.matches("\\d{7,10}")) {
-            JOptionPane.showMessageDialog(
-                    this,
-                    "El DNI tiene que contener entre 7 y 10 números, sin puntos ni letras.",
-                    "DNI inválido",
-                    JOptionPane.WARNING_MESSAGE);
-            return;
-        }
-
-        if (!correoTexto.isEmpty() && (!correoTexto.contains("@") || !correoTexto.contains("."))) {
-            JOptionPane.showMessageDialog(
-                    this,
-                    "El correo ingresado no tiene un formato válido.",
-                    "Correo inválido",
-                    JOptionPane.WARNING_MESSAGE);
+        try {
+            int numeroDni = Integer.parseInt(dni);
+            if (numeroDni <= 0) {
+                JOptionPane.showMessageDialog(this, "El DNI tiene que ser un número positivo");
+                return;
+            }
+        } catch (NumberFormatException ex) {
+            JOptionPane.showMessageDialog(this, "El DNI tiene que ser un número entero");
             return;
         }
 
         String correo = correoTexto.isEmpty() ? null : correoTexto;
-        Alumno nuevo = new Alumno(nombre, apellido, dni, correo);
 
         try {
-            alumnoDAO.insertar(nuevo);
+            alumnoDAO.insertar(new Alumno(nombre, apellido, dni, correo));
             campoNombre.setText("");
             campoApellido.setText("");
             campoDni.setText("");
             campoCorreo.setText("");
-            cargarCursos();
-            JOptionPane.showMessageDialog(
-                    this,
-                    "Alumno registrado correctamente.",
-                    "Alta de alumno",
-                    JOptionPane.INFORMATION_MESSAGE);
-        } catch (SQLException ex) {
-            JOptionPane.showMessageDialog(
-                    this,
-                    mensajeErrorAlumno(ex),
-                    "No se pudo guardar",
-                    JOptionPane.ERROR_MESSAGE);
-        } catch (IOException ex) {
-            JOptionPane.showMessageDialog(
-                    this,
-                    "No se encontró o no se pudo leer el archivo config.properties.",
-                    "Error de configuración",
-                    JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Alumno guardado");
+        } catch (SQLException | IOException ex) {
+            JOptionPane.showMessageDialog(this, "No se pudo guardar el alumno");
         }
     }
 
-    public void cargarCursos() {
-        modeloCursos.setRowCount(0);
+    private void inscribirAlumno() {
+        Alumno alumnoElegido = (Alumno) comboAlumnos.getSelectedItem();
+        Curso cursoElegido = (Curso) comboCursos.getSelectedItem();
+
+        if (alumnoElegido == null || cursoElegido == null) {
+            JOptionPane.showMessageDialog(this, "Elegí un alumno y un curso primero");
+            return;
+        }
+
+        Inscripcion nueva = new Inscripcion(
+                alumnoElegido,
+                cursoElegido,
+                LocalDate.now(),
+                checkCuotaPaga.isSelected()
+        );
+
         try {
-            for (Curso c : cursoDAO.listar()) {
-                modeloCursos.addRow(new Object[] {
-                        c.getCodigo(),
-                        c.getIdioma(),
-                        c.getNivel(),
-                        c.getTurno(),
-                        c.getCupo(),
-                        c.getInscriptos(),
-                        c.getVacantes(),
-                        c.getCuotaMensual()
-                });
-            }
-        } catch (SQLException ex) {
-            JOptionPane.showMessageDialog(
-                    this,
-                    mensajeErrorBase(ex),
-                    "Error de base de datos",
-                    JOptionPane.ERROR_MESSAGE);
-        } catch (IOException ex) {
-            JOptionPane.showMessageDialog(
-                    this,
-                    "No se encontró o no se pudo leer el archivo config.properties.",
-                    "Error de configuración",
-                    JOptionPane.ERROR_MESSAGE);
+            inscripcionDAO.insertar(nueva);
+            checkCuotaPaga.setSelected(false);
+            JOptionPane.showMessageDialog(this, "Inscripción guardada");
+        } catch (SQLException | IOException ex) {
+            JOptionPane.showMessageDialog(this, "No se pudo guardar la inscripción");
         }
     }
 
-    private String mensajeErrorAlumno(SQLException ex) {
-        return switch (ex.getErrorCode()) {
-            case 1062 -> "Ya existe un alumno registrado con ese DNI.";
-            case 0 -> "No se pudo conectar con la base de datos. Verificá que el servidor MySQL esté encendido.";
-            case 1045 -> "Usuario o contraseña de la base de datos incorrectos.";
-            case 1049 -> "La base de datos 'instituto' no existe. Ejecutá primero el script instituto.sql.";
-            default -> "No se pudo guardar el alumno en la base de datos.";
-        };
-    }
+    private void darDeBajaInscripcion() {
+        int filaVista = tablaInscripciones.getSelectedRow();
+        if (filaVista == -1) {
+            JOptionPane.showMessageDialog(this, "Elegí una fila primero");
+            return;
+        }
 
-    private String mensajeErrorBase(SQLException ex) {
-        return switch (ex.getErrorCode()) {
-            case 0 -> "No se pudo conectar con la base de datos. Verificá que el servidor MySQL esté encendido.";
-            case 1045 -> "Usuario o contraseña de la base de datos incorrectos.";
-            case 1049 -> "La base de datos 'instituto' no existe. Ejecutá primero el script instituto.sql.";
-            default -> "No se pudieron cargar los cursos desde la base de datos.";
-        };
+        int filaModelo = tablaInscripciones.convertRowIndexToModel(filaVista);
+        String dni = (String) modeloInscripciones.getValueAt(filaModelo, 0);
+        String alumno = (String) modeloInscripciones.getValueAt(filaModelo, 1);
+        String codigoCurso = (String) modeloInscripciones.getValueAt(filaModelo, 2);
+
+        int r = JOptionPane.showConfirmDialog(
+                this,
+                "¿Dar de baja la inscripción de " + alumno + " en " + codigoCurso + "?"
+        );
+
+        if (r == JOptionPane.YES_OPTION) {
+            try {
+                inscripcionDAO.eliminar(dni, codigoCurso);
+                JOptionPane.showMessageDialog(this, "Inscripción dada de baja");
+            } catch (SQLException | IOException ex) {
+                JOptionPane.showMessageDialog(this, "No se pudo dar de baja la inscripción");
+            }
+        }
     }
 
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> new VentanaInstituto().setVisible(true));
+        new VentanaInstituto().setVisible(true);
     }
 }

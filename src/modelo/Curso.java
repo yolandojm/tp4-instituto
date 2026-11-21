@@ -76,4 +76,9 @@ public class Curso {
         this.cuotaMensual = cuotaMensual;
     }
 
+    @Override
+    public String toString() {
+        return codigo + " — " + idioma + " " + nivel + " (" + turno + ")";
+    }
+
 }

@@ -1,5 +1,6 @@
 
 
+SET NAMES utf8mb4;
 DROP DATABASE IF EXISTS instituto;
 CREATE DATABASE instituto CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE instituto;
