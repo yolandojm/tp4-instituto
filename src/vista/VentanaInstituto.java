@@ -153,33 +153,43 @@ public class VentanaInstituto extends JFrame {
         String correoTexto = campoCorreo.getText().trim();
 
         if (nombre.isEmpty() || apellido.isEmpty() || dni.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Nombre, apellido y DNI son obligatorios");
+            JOptionPane.showMessageDialog(this, "Nombre, apellido y DNI son obligatorios", "Dato inválido", JOptionPane.ERROR_MESSAGE);
             return;
         }
 
         try {
             int numeroDni = Integer.parseInt(dni);
-            if (numeroDni <= 0) {
-                JOptionPane.showMessageDialog(this, "El DNI tiene que ser un número positivo");
+            if (numeroDni <= 0 || dni.length() < 7 || dni.length() > 10) {
+                JOptionPane.showMessageDialog(this, "El DNI tiene que tener entre 7 y 10 números", "Dato inválido", JOptionPane.ERROR_MESSAGE);
                 return;
             }
         } catch (NumberFormatException ex) {
-            JOptionPane.showMessageDialog(this, "El DNI tiene que ser un número entero");
+            JOptionPane.showMessageDialog(this, "El DNI tiene que ser un número entero", "Dato inválido", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        if (!correoTexto.isEmpty() && (!correoTexto.contains("@") || !correoTexto.contains("."))) {
+            JOptionPane.showMessageDialog(this, "El correo ingresado no es válido", "Dato inválido", JOptionPane.ERROR_MESSAGE);
             return;
         }
 
         String correo = correoTexto.isEmpty() ? null : correoTexto;
 
         try {
-            alumnoDAO.insertar(new Alumno(nombre, apellido, dni, correo));
-            campoNombre.setText("");
-            campoApellido.setText("");
-            campoDni.setText("");
-            campoCorreo.setText("");
-            cargar();
-            JOptionPane.showMessageDialog(this, "Alumno guardado");
+            if (alumnoDAO.insertar(new Alumno(nombre, apellido, dni, correo))) {
+                campoNombre.setText("");
+                campoApellido.setText("");
+                campoDni.setText("");
+                campoCorreo.setText("");
+                cargar();
+                JOptionPane.showMessageDialog(this, "Alumno guardado");
+            } else {
+                JOptionPane.showMessageDialog(this, "No se pudo guardar el alumno", "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        } catch (IllegalArgumentException ex) {
+            JOptionPane.showMessageDialog(this, ex.getMessage(), "Dato inválido", JOptionPane.ERROR_MESSAGE);
         } catch (SQLException | IOException ex) {
-            JOptionPane.showMessageDialog(this, "No se pudo guardar el alumno");
+            JOptionPane.showMessageDialog(this, "No se pudo guardar el alumno", "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -200,12 +210,15 @@ public class VentanaInstituto extends JFrame {
         );
 
         try {
-            inscripcionDAO.insertar(nueva);
-            checkCuotaPaga.setSelected(false);
-            cargar();
-            JOptionPane.showMessageDialog(this, "Inscripción guardada");
+            if (inscripcionDAO.insertar(nueva)) {
+                checkCuotaPaga.setSelected(false);
+                cargar();
+                JOptionPane.showMessageDialog(this, "Inscripción guardada");
+            } else {
+                JOptionPane.showMessageDialog(this, "No se pudo guardar la inscripción", "Error", JOptionPane.ERROR_MESSAGE);
+            }
         } catch (SQLException | IOException ex) {
-            JOptionPane.showMessageDialog(this, "No se pudo guardar la inscripción");
+            JOptionPane.showMessageDialog(this, "No se pudo guardar la inscripción", "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -228,11 +241,15 @@ public class VentanaInstituto extends JFrame {
 
         if (r == JOptionPane.YES_OPTION) {
             try {
-                inscripcionDAO.eliminar(dni, codigoCurso);
-                cargar();
-                JOptionPane.showMessageDialog(this, "Inscripción dada de baja");
+                if (inscripcionDAO.eliminar(dni, codigoCurso)) {
+                    cargar();
+                    JOptionPane.showMessageDialog(this, "Inscripción dada de baja");
+                } else {
+                    cargar();
+                    JOptionPane.showMessageDialog(this, "No se encontró la inscripción para dar de baja");
+                }
             } catch (SQLException | IOException ex) {
-                JOptionPane.showMessageDialog(this, "No se pudo dar de baja la inscripción");
+                JOptionPane.showMessageDialog(this, "No se pudo dar de baja la inscripción", "Error", JOptionPane.ERROR_MESSAGE);
             }
         }
     }
@@ -273,7 +290,7 @@ public class VentanaInstituto extends JFrame {
                 });
             }
         } catch (SQLException | IOException ex) {
-            JOptionPane.showMessageDialog(this, "No se pudo leer la base");
+            JOptionPane.showMessageDialog(this, "No se pudo leer la base", "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
