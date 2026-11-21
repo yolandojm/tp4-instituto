@@ -83,7 +83,7 @@ public class CursoDAO {
     }
 
     public boolean modificar(String codigoActual, Curso curso) throws SQLException, IOException {
-        String sql = "UPDATE curso SET codigo = ?, idioma = ?, nivel = ?, turno = ?, cupo = ?, cuota_mensual = ? WHERE codigo = ?";
+        String sql = "UPDATE curso SET codigo = ?, idioma = ?, nivel = ?, turno = ?, cupo = ?, vacantes = ?, cuota_mensual = ? WHERE codigo = ?";
 
         try (Connection con = Conexion.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
@@ -93,8 +93,9 @@ public class CursoDAO {
             ps.setString(3, curso.getNivel());
             ps.setString(4, curso.getTurno());
             ps.setInt(5, curso.getCupo());
-            ps.setDouble(6, curso.getCuotaMensual());
-            ps.setString(7, codigoActual);
+            ps.setInt(6, curso.getVacantes());
+            ps.setDouble(7, curso.getCuotaMensual());
+            ps.setString(8, codigoActual);
 
             return ps.executeUpdate() == 1;
         }
