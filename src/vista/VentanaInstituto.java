@@ -141,6 +141,10 @@ public class VentanaInstituto extends JFrame {
         botonBaja.addActionListener(e -> darDeBajaInscripcion());
         filaBaja.add(botonBaja);
 
+        JButton botonDeudores = new JButton("Ver deudores");
+        botonDeudores.addActionListener(e -> verDeudores());
+        filaBaja.add(botonDeudores);
+
         panel.add(filaInscribir);
         panel.add(filaBaja);
         return panel;
@@ -251,6 +255,30 @@ public class VentanaInstituto extends JFrame {
             } catch (SQLException | IOException ex) {
                 JOptionPane.showMessageDialog(this, "No se pudo dar de baja la inscripción", "Error", JOptionPane.ERROR_MESSAGE);
             }
+        }
+    }
+
+    private void verDeudores() {
+        try {
+            String mensaje = "";
+
+            for (Inscripcion i : inscripcionDAO.listarDeudores()) {
+                mensaje += "Alumno: " + i.getAlumno().getNombre() + " "
+                        + i.getAlumno().getApellido() + "\n";
+                mensaje += "Curso: " + i.getCurso().getCodigo() + "\n";
+                mensaje += "Deuda: $" + i.getCurso().getCuotaMensual() + "\n\n";
+            }
+
+            if (mensaje.isEmpty()) {
+                mensaje = "No hay alumnos deudores.";
+            }
+
+            JOptionPane.showMessageDialog(this, mensaje, "Alumnos deudores",
+                    JOptionPane.INFORMATION_MESSAGE);
+
+        } catch (SQLException | IOException ex) {
+            JOptionPane.showMessageDialog(this, "No se pudieron consultar los deudores",
+                    "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
