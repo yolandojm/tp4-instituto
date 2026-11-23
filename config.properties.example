@@ -1,7 +1,3 @@
-# Configuración de ejemplo para conexión a MySQL (Requisito B.2 y Entrega)
-# Para ejecutar el programa, copie este archivo como 'config.properties'
-# y coloque la contraseña correspondiente a su motor MySQL local.
-
 db.url=jdbc:mysql://localhost:3306/instituto
 db.user=root
-db.password=
+db.password=tucontraseña

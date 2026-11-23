@@ -34,14 +34,16 @@ El script `instituto.sql` es idempotente: elimina la base si existía previament
 
 2. **Compilación**:
    ```bash
-   javac -cp "lib/mysql-connector-j-9.3.0.jar:." src/**/*.java
+   javac -d out -cp lib/mysql-connector-j-9.3.0.jar src/conexion/*.java src/modelo/*.java src/dao/*.java src/vista/*.java src/Main.java
    ```
 
-3. **Ejecución**:
+3. **Ejecución (macOS / Linux)**:
    ```bash
-   java -cp "lib/mysql-connector-j-9.3.0.jar:src:." Main
+   java -cp out:lib/mysql-connector-j-9.3.0.jar Main
    ```
-   
+   *(En Windows usar `;` en lugar de `:`: `java -cp out;lib/mysql-connector-j-9.3.0.jar Main`).*
+
+---
 
 # Preguntas
 
@@ -56,4 +58,3 @@ En AlumnoDAO utilizamos PreparedStatement para buscar un alumno por su DNI. En l
 ### **3. ¿Dónde decidieron que viva la regla del cupo: en la ventana, en el acceso a datos o en la base? Justifiquen la decisión.**
 
 Decidimos manejar la inscripción y el descuento de vacantes desde el acceso a datos, en InscripcionDAO. Allí utilizamos una transacción para que ambas operaciones se realicen juntas. También agregamos restricciones en la base de datos para evitar que las vacantes sean negativas y mantener la información consistente.
-
