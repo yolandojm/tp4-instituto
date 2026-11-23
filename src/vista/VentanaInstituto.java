@@ -192,8 +192,10 @@ public class VentanaInstituto extends JFrame {
             }
         } catch (IllegalArgumentException ex) {
             JOptionPane.showMessageDialog(this, ex.getMessage(), "Dato inválido", JOptionPane.ERROR_MESSAGE);
-        } catch (SQLException | IOException ex) {
-            JOptionPane.showMessageDialog(this, "No se pudo guardar el alumno", "Error", JOptionPane.ERROR_MESSAGE);
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(this, mensajeParaAlumno(ex), "Error", JOptionPane.ERROR_MESSAGE);
+        } catch (IOException ex) {
+            JOptionPane.showMessageDialog(this, "No se pudo leer el archivo config.properties", "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -221,8 +223,10 @@ public class VentanaInstituto extends JFrame {
             } else {
                 JOptionPane.showMessageDialog(this, "No se pudo guardar la inscripción", "Error", JOptionPane.ERROR_MESSAGE);
             }
-        } catch (SQLException | IOException ex) {
-            JOptionPane.showMessageDialog(this, "No se pudo guardar la inscripción", "Error", JOptionPane.ERROR_MESSAGE);
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(this, mensajeParaInscripcion(ex), "Error", JOptionPane.ERROR_MESSAGE);
+        } catch (IOException ex) {
+            JOptionPane.showMessageDialog(this, "No se pudo leer el archivo config.properties", "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -252,8 +256,10 @@ public class VentanaInstituto extends JFrame {
                     cargar();
                     JOptionPane.showMessageDialog(this, "No se encontró la inscripción para dar de baja");
                 }
-            } catch (SQLException | IOException ex) {
-                JOptionPane.showMessageDialog(this, "No se pudo dar de baja la inscripción", "Error", JOptionPane.ERROR_MESSAGE);
+            } catch (SQLException ex) {
+                JOptionPane.showMessageDialog(this, mensajeParaBase(ex), "Error", JOptionPane.ERROR_MESSAGE);
+            } catch (IOException ex) {
+                JOptionPane.showMessageDialog(this, "No se pudo leer el archivo config.properties", "Error", JOptionPane.ERROR_MESSAGE);
             }
         }
     }
@@ -276,8 +282,11 @@ public class VentanaInstituto extends JFrame {
             JOptionPane.showMessageDialog(this, mensaje, "Alumnos deudores",
                     JOptionPane.INFORMATION_MESSAGE);
 
-        } catch (SQLException | IOException ex) {
-            JOptionPane.showMessageDialog(this, "No se pudieron consultar los deudores",
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(this, mensajeParaBase(ex),
+                    "Error", JOptionPane.ERROR_MESSAGE);
+        } catch (IOException ex) {
+            JOptionPane.showMessageDialog(this, "No se pudo leer el archivo config.properties",
                     "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
@@ -317,9 +326,42 @@ public class VentanaInstituto extends JFrame {
                         i.getCuotaPaga() ? "Sí" : "No"
                 });
             }
-        } catch (SQLException | IOException ex) {
-            JOptionPane.showMessageDialog(this, "No se pudo leer la base", "Error", JOptionPane.ERROR_MESSAGE);
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(this, mensajeParaBase(ex), "Error", JOptionPane.ERROR_MESSAGE);
+        } catch (IOException ex) {
+            JOptionPane.showMessageDialog(this, "No se pudo leer el archivo config.properties", "Error", JOptionPane.ERROR_MESSAGE);
         }
+    }
+
+    private String mensajeParaAlumno(SQLException ex) {
+        return switch (ex.getErrorCode()) {
+            case 1062 -> "Ya existe un alumno con ese DNI";
+            case 0 -> "No se pudo conectar con la base de datos. Verificá que MySQL esté encendido";
+            case 1045 -> "Usuario o contraseña de la base de datos incorrectos";
+            case 1049 -> "La base de datos instituto no existe";
+            default -> "No se pudo guardar el alumno";
+        };
+    }
+
+    private String mensajeParaInscripcion(SQLException ex) {
+        return switch (ex.getErrorCode()) {
+            case 1062 -> "El alumno ya está inscripto en ese curso";
+            case 3819 -> "El curso está completo, no quedan vacantes";
+            case 1452 -> "El alumno o el curso elegido no existe";
+            case 0 -> "No se pudo conectar con la base de datos. Verificá que MySQL esté encendido";
+            case 1045 -> "Usuario o contraseña de la base de datos incorrectos";
+            case 1049 -> "La base de datos instituto no existe";
+            default -> "No se pudo guardar la inscripción";
+        };
+    }
+
+    private String mensajeParaBase(SQLException ex) {
+        return switch (ex.getErrorCode()) {
+            case 0 -> "No se pudo conectar con la base de datos. Verificá que MySQL esté encendido";
+            case 1045 -> "Usuario o contraseña de la base de datos incorrectos";
+            case 1049 -> "La base de datos instituto no existe";
+            default -> "No se pudo consultar la base de datos";
+        };
     }
 
     public static void main(String[] args) {
