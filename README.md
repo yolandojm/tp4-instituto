@@ -41,5 +41,19 @@ El script `instituto.sql` es idempotente: elimina la base si existía previament
    ```bash
    java -cp "lib/mysql-connector-j-9.3.0.jar:src:." Main
    ```
+   
 
+# Preguntas
+
+### **1. ¿Qué pasa si dos personas usan el programa al mismo tiempo y se inscriben al último lugar de un curso? ¿Qué hace su implementación?**
+
+Si dos personas intentan ocupar la última vacante, ambas operaciones no pueden completarse correctamente. porque nuestra implementación se basa en utilizar una transacción para guardar la inscripción y descontar la vacante. Además, la base de datos no permite que las vacantes sean negativas. Si una operación falla, se realiza un rollback y no queda una inscripción a medias.
+
+### **2. Muestren una consulta de su programa escrita con PreparedStatement y expliquen qué le pasaría si la hubieran armado concatenando lo que escribe el usuario.**
+
+En AlumnoDAO utilizamos PreparedStatement para buscar un alumno por su DNI. En la consulta escribimos un "?" como marcador y luego usamos "ps.setString(1, dni)" para colocar el DNI ingresado por el usuario. Si concatenáramos directamente ese dato en la consulta, alguien podría ingresar texto que modifique la instrucción SQL y acceda o altere información que no debería. Por eso usamos PreparedStatement, que trata el DNI como un dato y no como parte del código SQL.
+
+### **3. ¿Dónde decidieron que viva la regla del cupo: en la ventana, en el acceso a datos o en la base? Justifiquen la decisión.**
+
+Decidimos manejar la inscripción y el descuento de vacantes desde el acceso a datos, en InscripcionDAO. Allí utilizamos una transacción para que ambas operaciones se realicen juntas. También agregamos restricciones en la base de datos para evitar que las vacantes sean negativas y mantener la información consistente.
 
